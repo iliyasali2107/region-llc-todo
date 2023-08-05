@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package url;
+
+option go_package = "./pkg/pb";
+
+import "google/protobuf/timestamp.proto";
+
+
+service TodoService {
+    rpc CreateTodo(CreateTodoRequest) returns (CreateTodoResponse) {};
+}
+
+message CreateTodoRequest {
+    string title = 1;
+    google.protobuf.Timestamp active_at = 2;
+}
+
+message CreateTodoResponse {
+    int64 id = 1;
+    
+}
+
