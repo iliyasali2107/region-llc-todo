@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"region-llc-todo/pkg/config"
@@ -14,7 +13,7 @@ import (
 )
 
 type Storage interface {
-	InsertTodo(ctx context.Context, todo models.Todo) (int64, error)
+	InsertTodo(ctx context.Context, todo models.Todo) error
 }
 
 type storage struct {
@@ -27,12 +26,14 @@ type storage struct {
 func Init(cfg config.Config) Storage {
 	ctx := context.Background()
 
-	serverApi := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI(cfg.DBUrl).
-		SetServerAPIOptions(serverApi)
+	opts := options.Client().ApplyURI(cfg.DBUrl)
 
 	client, err := mongo.Connect(ctx, opts)
-	fmt.Println("qewrqwer")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = client.Ping(context.Background(), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -64,16 +65,11 @@ func InitCollection(db *mongo.Client, cfg config.Config) *mongo.Collection {
 }
 
 // TODO: duplicate field error
-func (s *storage) InsertTodo(ctx context.Context, todo models.Todo) (int64, error) {
-	insertResult, err := s.TodoCollection.InsertOne(ctx, todo)
+func (s *storage) InsertTodo(ctx context.Context, todo models.Todo) error {
+	_, err := s.TodoCollection.InsertOne(ctx, todo)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
-	n, ok := insertResult.InsertedID.(int64)
-	if !ok {
-		return 0, fmt.Errorf("couldn't assert type int64")
-	}
-
-	return n, nil
+	return nil
 }

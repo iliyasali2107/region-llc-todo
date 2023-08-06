@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"region-llc-todo/pkg/config"

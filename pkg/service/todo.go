@@ -38,10 +38,10 @@ func (s *service) CreateTodo(ctx context.Context, req *pb.CreateTodoRequest) (*p
 		ActiveAt: convertedTime,
 	}
 
-	id, err := s.S.InsertTodo(ctx, todo)
+	err := s.S.InsertTodo(ctx, todo)
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.CreateTodoResponse{Id: id}, nil
+	return &pb.CreateTodoResponse{Id: 200}, nil
 }

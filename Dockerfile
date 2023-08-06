@@ -18,7 +18,7 @@ COPY --from=build /app/main /app/main
 # Copy the built Go binary from the build stage to the runtime stage
 
 # Expose port 8080 to the outside world
-EXPOSE 50051
+EXPOSE 4000
 
 # Set the entry point for the container
 CMD ["/app/main"]

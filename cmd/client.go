@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"fmt"
@@ -15,7 +15,7 @@ type ServiceClient struct {
 }
 
 func InitServiceClient(c *config.Config) pb.TodoServiceClient {
-	cc, err := grpc.Dial(c.Port, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	cc, err := grpc.Dial(c.ServicePort, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		fmt.Println("Could not connect:", err)
 	}

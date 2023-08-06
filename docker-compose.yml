@@ -4,37 +4,27 @@ version: '3.1'
 services:
 
   mongo:
-    image: mongo
-    restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: secret
-
-  mongo-express:
-    image: mongo-express
+    image: mongo:latest
+    container_name: mongo
     restart: always
     ports:
-      - 8081:8081
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: root
-      ME_CONFIG_MONGODB_ADMINPASSWORD: secret
-      ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
+      - 27017:27017
     
+  
   todo:
     container_name: todo_service
-    build: ./
-    # depends_on:
-    #   postgres:
-    #     condition: service_healthy
+    build: .
+    depends_on:
+      - mongo
     ports:
       - 4000:4000
     environment:
-      PORT: todo_service:4000
+      PORT: :4000
       DB_NAME: mymongo
       TODO_COLLECTION: todo
       JWT_SECRET_KEY: not-secret-key
       ISSUER: auth-svc
       EXPIRATION_HOURS: 1
-      DB_URL: mongodb://@mongo:27017/
+      DB_URL: mongodb://mongo:27017/mymongo
       CLIENT_PORT: :4000
       

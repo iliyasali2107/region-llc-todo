@@ -2,7 +2,6 @@ package routes
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -13,9 +12,11 @@ import (
 )
 
 type CreateRequestBody struct {
-	Title    string `json:"email" binding:"required,max=200"`
+	Title    string `json:"title" binding:"required,max=200"`
 	ActiveAt string `json:"active_at" binding:"required"`
 }
+
+const layout = "2006-01-02"
 
 // @Summary Login existing user
 // @Tags auth
@@ -28,23 +29,23 @@ type CreateRequestBody struct {
 // @Failure 400
 // @Failure 500
 // @Router /auth/login [post]
-func Login(ctx *gin.Context, c pb.TodoServiceClient) {
+func Create(ctx *gin.Context, c pb.TodoServiceClient) {
 	var req CreateRequestBody
 
 	if err := ctx.BindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid credentials"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid credentials" + err.Error()})
 		return
 	}
 
-	parsedTime, err := time.Parse(time.RFC3339, req.ActiveAt)
+	parsedTime, err := time.Parse(layout, req.ActiveAt)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid date"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "couldn't parse date"})
 		return
 	}
 
 	timestampProto, err := ptypes.TimestampProto(parsedTime)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid date"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "couldn't convert"})
 		return
 	}
 
@@ -53,13 +54,9 @@ func Login(ctx *gin.Context, c pb.TodoServiceClient) {
 		ActiveAt: timestampProto,
 	})
 	if err != nil {
-		fmt.Println(err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	ctx.JSON(http.StatusNoContent, &res)
-}
-
-func Create(ctx *gin.Context, c pb.TodoServiceClient) {
+	ctx.JSON(http.StatusNoContent, gin.H{"success": res})
 }

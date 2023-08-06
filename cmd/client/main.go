@@ -3,14 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
-	"net"
 
+	"region-llc-todo/cmd"
 	"region-llc-todo/pkg/config"
-	"region-llc-todo/pkg/db"
-	"region-llc-todo/pkg/pb"
-	"region-llc-todo/pkg/service"
 
-	"google.golang.org/grpc"
+	"github.com/gin-gonic/gin"
 )
 
 // import (
@@ -60,19 +57,12 @@ func main() {
 		log.Fatalln("failed to config", err)
 	}
 
-	storage := db.Init(cfg)
+	r := gin.Default()
 
-	lis, err := net.Listen("tcp", cfg.ClientPort)
-	if err != nil {
-		log.Fatalln("failed to listen", err)
-	}
+	cmd.RegisterRoutes(r, &cfg)
 
-	srv := service.NewService(storage)
+	fmt.Println("todo service is on: ", cfg.Port)
 
-	grpcServer := grpc.NewServer()
-	pb.RegisterTodoServiceServer(grpcServer, srv)
-	fmt.Println("rumming..........")
-	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalln("failed to server", err)
-	}
+	r.Run(cfg.ClientPort)
+
 }
