@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package url;
+
+option go_package = "./pkg/pb";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+
+service TodoService {
+    rpc CreateTodo(CreateTodoRequest) returns(google.protobuf.Empty) {};
+    rpc UpdateTodo(UpdateTodoRequest) returns(google.protobuf.Empty) {};
+    rpc DeleteTodo(DeleteTodoRequest) returns(google.protobuf.Empty) {};
+    rpc UpdateAsDone(UpdateAsDoneRequest) returns(google.protobuf.Empty) {};
+    rpc ListTodos(ListTodosRequest) returns(ListTodosResponse) {}
+}
+
+message CreateTodoRequest {
+    string title = 1;
+    google.protobuf.Timestamp active_at = 2;
+}
+
+
+message UpdateTodoRequest {
+    string id = 1;
+    string title = 2;
+    google.protobuf.Timestamp active_at = 3;
+}
+
+message DeleteTodoRequest {
+    string id = 1;
+}
+
+message UpdateAsDoneRequest {
+    string id = 1;
+}
+
+message ListTodosRequest {
+    string filter = 1;
+}
+
+message ListTodosResponse {
+    repeated Todo todos = 1;
+}
+
+message Todo {
+    string id = 1;
+    string title = 2;
+    google.protobuf.Timestamp active_at = 3;
+    string status = 4;
+}
+

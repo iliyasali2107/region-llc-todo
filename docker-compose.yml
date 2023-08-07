@@ -13,18 +13,26 @@ services:
   
   todo:
     container_name: todo_service
-    build: .
+    build: region-llc-todo-service
     depends_on:
       - mongo
     ports:
+      - 50051:50051
+    environment:
+      PORT: todo_service:50051
+      DB_NAME: todo_list
+      TODO_COLLECTION: todo
+      DB_URL: mongodb://mongo:27017/todo_list
+  
+  api-gateway:
+    container_name: api_gateway
+    build: region-llc-todo-api-gateway
+    depends_on:
+      - mongo
+      - todo
+    ports: 
       - 4000:4000
     environment:
       PORT: :4000
-      DB_NAME: mymongo
-      TODO_COLLECTION: todo
-      JWT_SECRET_KEY: not-secret-key
-      ISSUER: auth-svc
-      EXPIRATION_HOURS: 1
-      DB_URL: mongodb://mongo:27017/mymongo
-      CLIENT_PORT: :4000
-      
+      TODO_SERVICE_PORT: todo_service:50051
+  
