@@ -2,11 +2,11 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"log"
+	"time"
+
 	"region-llc-todo-service/pkg/config"
 	"region-llc-todo-service/pkg/models"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -15,12 +15,13 @@ import (
 )
 
 type Storage interface {
-	InsertTodo(ctx context.Context, todo models.Todo) error
-	UpdateTodoById(ctx context.Context, todo models.Todo) error
-	DeleteTodoById(ctx context.Context, id string) error
-	UpdateAsDone(ctx context.Context, id string) error
+	InsertTodo(ctx context.Context, todo models.Todo) (string, error)
+	UpdateTodoById(ctx context.Context, todo models.Todo) (int64, error)
+	DeleteTodoById(ctx context.Context, id string) (int64, error)
+	UpdateAsDone(ctx context.Context, id string) (int64, error)
 	GetTodosByFilterDone(ctx context.Context) ([]models.Todo, error)
 	GetTodosByFilterActive(ctx context.Context) ([]models.Todo, error)
+	GetOneTodo(ctx context.Context, id string) (todo models.Todo, err error)
 }
 
 type storage struct {
@@ -72,79 +73,79 @@ func InitCollection(db *mongo.Client, cfg config.Config) *mongo.Collection {
 }
 
 // TODO: duplicate field error
-func (s *storage) InsertTodo(ctx context.Context, todo models.Todo) error {
-	_, err := s.TodoCollection.InsertOne(ctx, todo)
+func (s *storage) InsertTodo(ctx context.Context, todo models.Todo) (string, error) {
+	res, err := s.TodoCollection.InsertOne(ctx, todo)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			return ErrDuplicate
+			return "", ErrDuplicate
 		}
-		fmt.Println(err)
-		return err
+
+		return "", err
 	}
 
-	return nil
+	return res.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
-func (s *storage) UpdateTodoById(ctx context.Context, todo models.Todo) error {
+func (s *storage) UpdateTodoById(ctx context.Context, todo models.Todo) (int64, error) {
 	objId, _ := primitive.ObjectIDFromHex(todo.Id)
 	filter := bson.M{"_id": objId}
 	update := bson.M{"$set": bson.M{"title": todo.Title, "active_at": todo.ActiveAt}}
-	result, err := s.TodoCollection.UpdateOne(ctx, filter, update)
+	res, err := s.TodoCollection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return ErrNotFound
+			return 0, ErrNotFound
 		}
-		return err
+		return 0, err
 	}
 
-	if result.MatchedCount == 0 {
-		return ErrNotFound
+	if res.MatchedCount == 0 {
+		return 0, ErrNotFound
 	}
 
-	if result.ModifiedCount == 0 {
-		return ErrModify
+	if res.ModifiedCount == 0 {
+		return 0, ErrModify
 	}
 
-	return nil
+	return res.ModifiedCount, nil
 }
 
-func (s *storage) DeleteTodoById(ctx context.Context, id string) error {
+func (s *storage) DeleteTodoById(ctx context.Context, id string) (int64, error) {
 	objId, _ := primitive.ObjectIDFromHex(id)
 	filter := bson.M{"_id": objId}
-	deleteResult, err := s.TodoCollection.DeleteOne(ctx, filter)
+	res, err := s.TodoCollection.DeleteOne(ctx, filter)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	if deleteResult.DeletedCount == 0 {
-		return ErrNotFound
+	if res.DeletedCount == 0 {
+		return 0, ErrNotFound
 	}
 
-	return nil
+	return res.DeletedCount, nil
 }
 
-func (s *storage) UpdateAsDone(ctx context.Context, id string) error {
+func (s *storage) UpdateAsDone(ctx context.Context, id string) (int64, error) {
 	objId, _ := primitive.ObjectIDFromHex(id)
 	filter := bson.M{"_id": objId}
 	update := bson.M{"$set": bson.M{"status": "done"}}
-	result, err := s.TodoCollection.UpdateOne(ctx, filter, update)
+	res, err := s.TodoCollection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return ErrNotFound
+			return 0, ErrNotFound
 		}
 
-		return err
+		return 0, err
 	}
 
-	if result.MatchedCount == 0 {
-		return ErrNotFound
+	if res.MatchedCount == 0 {
+		return 0, ErrNotFound
 	}
 
-	if result.ModifiedCount == 0 {
-		return ErrModify
+	if res.ModifiedCount == 0 {
+		return 0, ErrModify
 	}
 
-	return nil
+	return res.ModifiedCount, nil
 }
 
 func (s *storage) GetTodosByFilterActive(ctx context.Context) ([]models.Todo, error) {
@@ -185,4 +186,22 @@ func (s *storage) GetTodosByFilterDone(ctx context.Context) ([]models.Todo, erro
 	}
 
 	return todos, nil
+}
+
+func (s *storage) GetOneTodo(ctx context.Context, id string) (todo models.Todo, err error) {
+	objId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return models.Todo{}, err
+	}
+	filter := bson.M{"_id": objId}
+
+	err = s.TodoCollection.FindOne(ctx, filter).Decode(&todo)
+
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return models.Todo{}, ErrNotFound
+		}
+	}
+
+	return todo, nil
 }

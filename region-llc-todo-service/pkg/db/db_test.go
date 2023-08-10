@@ -1,104 +1,278 @@
 package db_test
 
-// import (
-// 	"testing"
+import (
+	"context"
+	"testing"
 
-// 	"region-llc-todo-service/pkg/models"
-// 	"region-llc-todo-service/pkg/utils"
+	"region-llc-todo-service/pkg/db"
+	"region-llc-todo-service/pkg/models"
+	"region-llc-todo-service/pkg/utils"
 
-// 	"github.com/stretchr/testify/require"
-// )
+	"github.com/stretchr/testify/require"
+)
 
-// func TestInsertUrl(t *testing.T) {
-// 	insertUrl(t)
-// }
+type Storage interface {
+	InsertTodo(ctx context.Context, todo models.Todo) error
+	UpdateTodoById(ctx context.Context, todo models.Todo) error
+	DeleteTodoById(ctx context.Context, id string) error
+	UpdateAsDone(ctx context.Context, id string) error
+	GetTodosByFilterDone(ctx context.Context) ([]models.Todo, error)
+	GetTodosByFilterActive(ctx context.Context) ([]models.Todo, error)
+}
 
-// func TestGetActiveUrl(t *testing.T) {
-// 	// rand1 := randomUrl()
+func TestInsertTodo(t *testing.T) {
+	duplicateTodo := models.Todo{}
 
-// 	// active1, err := TestStorage.InsertUrl(rand1)
+	t.Run("OK", func(t *testing.T) {
+		duplicateTodo = insertRandomTodo(t, db.StatusActive)
+	})
 
-// 	ins1 := insertUrl(t)
+	t.Run("Duplicate key/field", func(t *testing.T) {
+		res, err := TestStorage.InsertTodo(context.Background(), duplicateTodo)
+		require.Error(t, err)
+		require.Empty(t, res)
+		require.Equal(t, "", res)
+	})
+}
 
-// 	userId := ins1.UserID
+func TestUpdateTodoById(t *testing.T) {
+	todo := insertRandomTodo(t, db.StatusActive)
 
-// 	_, err := TestStorage.Activate(ins1.ID)
+	okArg := models.Todo{
+		Id:       todo.Id,
+		Title:    "new Title",
+		ActiveAt: todo.ActiveAt,
+		Status:   todo.Status,
+	}
 
-// 	res, err := TestStorage.GetActiveUrl(userId)
-// 	require.NoError(t, err)
-// 	require.NotEmpty(t, res)
-// 	require.True(t, res.Active)
-// }
+	notFoundArg := models.Todo{
+		Id:       "invalid id",
+		Title:    todo.Title,
+		ActiveAt: todo.ActiveAt,
+		Status:   todo.Status,
+	}
 
-// func TestSetActive(t *testing.T) {
-// 	url := insertUrl(t)
-// 	urlId, err := TestStorage.Activate(url.ID)
-// 	require.NoError(t, err)
-// 	resUrl, err := TestStorage.GetUrl(urlId)
-// 	require.NoError(t, err)
-// 	require.NotEmpty(t, resUrl)
-// 	require.True(t, resUrl.Active)
-// }
+	modifyErrArg := okArg
 
-// func TestSetNotActive(t *testing.T) {
-// 	url := insertUrl(t)
-// 	activeUrlId, err := TestStorage.Activate(url.ID)
-// 	require.NoError(t, err)
+	testCases := []struct {
+		name     string
+		arg      models.Todo
+		checkRes func(t *testing.T, res int64, err error)
+	}{
+		{
+			name: "OK",
+			arg:  okArg,
+			checkRes: func(t *testing.T, res int64, err error) {
+				require.NoError(t, err)
+				require.Equal(t, int64(1), res)
+				checkTodo, err := TestStorage.GetOneTodo(context.Background(), okArg.Id)
+				require.Equal(t, checkTodo.Title, okArg.Title)
+				require.Equal(t, checkTodo.ActiveAt.Year(), okArg.ActiveAt.Year())
+				require.Equal(t, checkTodo.ActiveAt.Month(), okArg.ActiveAt.Month())
+				require.Equal(t, checkTodo.ActiveAt.Day(), okArg.ActiveAt.Day())
+				require.Equal(t, checkTodo.Title, okArg.Title)
+				require.Equal(t, checkTodo.Title, okArg.Title)
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "NotFound",
+			arg:  notFoundArg,
+			checkRes: func(t *testing.T, res int64, err error) {
+				require.Error(t, err)
+				require.Equal(t, db.ErrNotFound, err)
+				require.Equal(t, int64(0), res)
+			},
+		},
+		{
+			name: "NotModified",
+			arg:  modifyErrArg,
+			checkRes: func(t *testing.T, res int64, err error) {
+				require.Error(t, err)
+				require.Equal(t, db.ErrModify, err)
+				require.Equal(t, int64(0), res)
+			},
+		},
+	}
 
-// 	notActiveUrlId, err := TestStorage.Deactivate(activeUrlId)
-// 	require.NoError(t, err)
+	for i := range testCases {
+		tc := testCases[i]
 
-// 	resUrl, err := TestStorage.GetUrl(notActiveUrlId)
-// 	require.NoError(t, err)
-// 	require.NotEmpty(t, resUrl)
-// 	require.False(t, resUrl.Active)
-// }
+		t.Run(tc.name, func(t *testing.T) {
+			res, err := TestStorage.UpdateTodoById(context.Background(), tc.arg)
+			tc.checkRes(t, res, err)
+		})
+	}
+}
 
-// func TestGetUrl(t *testing.T) {
-// 	url := insertUrl(t)
+func TestDeleteTodoById(t *testing.T) {
+	todo := insertRandomTodo(t, db.StatusActive)
+	okArg := todo.Id
+	notFoundArg := "not-found-id"
 
-// 	res, err := TestStorage.GetUrl(url.ID)
-// 	require.NoError(t, err)
-// 	require.NotEmpty(t, res)
-// 	require.Equal(t, url, res)
-// }
+	testCases := []struct {
+		name     string
+		arg      string
+		checkRes func(t *testing.T, res int64, err error)
+	}{
+		{
+			name: "OK",
+			arg:  okArg,
+			checkRes: func(t *testing.T, res int64, err error) {
+				require.NoError(t, err)
+				require.Equal(t, int64(1), res)
+				getRes, getErr := TestStorage.GetOneTodo(context.Background(), okArg)
+				require.Error(t, getErr)
+				require.Empty(t, getRes)
+				require.Equal(t, db.ErrNotFound, getErr)
+			},
+		},
+		{
+			name: "NotFound",
+			arg:  notFoundArg,
+			checkRes: func(t *testing.T, res int64, err error) {
+				require.Error(t, err)
+				require.Equal(t, int64(0), res)
+				require.Equal(t, db.ErrNotFound, err)
+			},
+		},
+	}
 
-// func TestGetUserUrls(t *testing.T) {
-// 	userID := utils.RandomInt(1, 1000)
-// 	var urls []models.Url
-// 	for i := 0; i < 10; i++ {
-// 		url := models.Url{
-// 			UserID: userID,
-// 			Url:    utils.RandomString(10),
-// 			Active: false,
-// 		}
+	for i := range testCases {
+		tc := testCases[i]
 
-// 		resUrl, err := TestStorage.InsertUrl(url)
-// 		require.NoError(t, err)
+		t.Run(tc.name, func(t *testing.T) {
+			res, err := TestStorage.DeleteTodoById(context.Background(), tc.arg)
+			tc.checkRes(t, res, err)
+		})
+	}
+}
 
-// 		urls = append(urls, resUrl)
-// 	}
+func TestUpdateAsDone(t *testing.T) {
+	todo := insertRandomTodo(t, db.StatusActive)
+	doneTodo := insertRandomTodo(t, db.StatusDone)
+	okArg := models.Todo{
+		Id:       todo.Id,
+		Title:    todo.Title,
+		ActiveAt: todo.ActiveAt,
+		Status:   db.StatusDone,
+	}
 
-// 	require.Equal(t, len(urls), 10)
-// 	for i := 0; i < 10; i++ {
-// 		require.Equal(t, urls[i].UserID, userID)
-// 	}
-// }
+	notFoundArg := models.Todo{
+		Id:       "invalid id",
+		Title:    todo.Title,
+		ActiveAt: todo.ActiveAt,
+		Status:   todo.Status,
+	}
 
-// func randomUrl() models.Url {
-// 	return models.Url{
-// 		UserID: utils.RandomInt(1, 50),
-// 		Url:    utils.RandomString(10),
-// 		Active: false,
-// 	}
-// }
+	modifyErrArg := doneTodo
 
-// func insertUrl(t *testing.T) models.Url {
-// 	randUrl := randomUrl()
-// 	resUrl, err := TestStorage.InsertUrl(randUrl)
-// 	require.NoError(t, err)
-// 	require.NotEmpty(t, resUrl)
-// 	require.Equal(t, randUrl.UserID, resUrl.UserID)
-// 	require.Equal(t, randUrl.Url, resUrl.Url)
-// 	return resUrl
-// }
+	testCases := []struct {
+		name     string
+		arg      models.Todo
+		checkRes func(t *testing.T, res int64, err error)
+	}{
+		{
+			name: "OK",
+			arg:  okArg,
+			checkRes: func(t *testing.T, res int64, err error) {
+				require.NoError(t, err)
+				require.Equal(t, int64(1), res)
+				checkTodo, err := TestStorage.GetOneTodo(context.Background(), okArg.Id)
+				require.NoError(t, err)
+				require.Equal(t, checkTodo.Status, db.StatusDone)
+			},
+		},
+		{
+			name: "NotFound",
+			arg:  notFoundArg,
+			checkRes: func(t *testing.T, res int64, err error) {
+				require.Error(t, err)
+				require.Equal(t, db.ErrNotFound, err)
+				require.Equal(t, int64(0), res)
+			},
+		},
+		{
+			name: "NotModified",
+			arg:  modifyErrArg,
+			checkRes: func(t *testing.T, res int64, err error) {
+				require.Error(t, err)
+				require.Equal(t, db.ErrModify, err)
+				require.Equal(t, int64(0), res)
+			},
+		},
+	}
+
+	for i := range testCases {
+		tc := testCases[i]
+
+		t.Run(tc.name, func(t *testing.T) {
+			res, err := TestStorage.UpdateAsDone(context.Background(), tc.arg.Id)
+			tc.checkRes(t, res, err)
+		})
+	}
+}
+
+func TestGetTodosByFilterDone(t *testing.T) {
+	checker := utils.RandomString(8)
+	n := 10
+	for i := 0; i < n; i++ {
+		TestStorage.InsertTodo(context.Background(), randomTodo(checker, db.StatusDone))
+	}
+
+	todos, err := TestStorage.GetTodosByFilterDone(context.Background())
+	require.NoError(t, err)
+
+	acc := 0
+	for _, todo := range todos {
+		if todo.Title == checker {
+			acc++
+		}
+	}
+
+	require.Equal(t, n, acc)
+}
+
+func TestGetTodosByFilterActive(t *testing.T) {
+	checker := utils.RandomString(8)
+	n := 10
+	for i := 0; i < n; i++ {
+		TestStorage.InsertTodo(context.Background(), randomTodo(checker, db.StatusActive))
+	}
+
+	todos, err := TestStorage.GetTodosByFilterActive(context.Background())
+	require.NoError(t, err)
+
+	acc := 0
+	for _, todo := range todos {
+		if todo.Title == checker {
+			acc++
+		}
+	}
+
+	require.Equal(t, n, acc)
+}
+
+func insertRandomTodo(t *testing.T, status string) models.Todo {
+	todo := models.Todo{
+		Title:    utils.RandomString(8),
+		ActiveAt: utils.RandomDate(),
+		Status:   status,
+	}
+
+	id, err := TestStorage.InsertTodo(context.Background(), todo)
+	require.NoError(t, err)
+	require.NotEmpty(t, id)
+
+	todo.Id = id
+
+	return todo
+}
+
+func randomTodo(checker string, status string) models.Todo {
+	return models.Todo{
+		Title:    checker,
+		ActiveAt: utils.RandomDate(),
+		Status:   status,
+	}
+}
