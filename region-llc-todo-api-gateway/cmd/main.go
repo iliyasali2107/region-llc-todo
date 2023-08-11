@@ -54,7 +54,7 @@ import (
 func main() {
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalln("failed to config", err)
+		log.Fatalln("failed to configdock", err)
 	}
 
 	r := gin.Default()

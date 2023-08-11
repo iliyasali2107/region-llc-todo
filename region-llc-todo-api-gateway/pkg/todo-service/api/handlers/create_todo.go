@@ -3,9 +3,8 @@ package handlers
 import (
 	"context"
 	"net/http"
-	"time"
-
 	"region-llc-todo-api-gateway/pkg/todo-service/pb"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/codes"

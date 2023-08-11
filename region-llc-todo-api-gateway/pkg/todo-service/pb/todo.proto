@@ -6,14 +6,38 @@ option go_package = "./pkg/pb";
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
+import "google/api/annotations.proto ";
 
 
 service TodoService {
-    rpc CreateTodo(CreateTodoRequest) returns(google.protobuf.Empty) {};
-    rpc UpdateTodo(UpdateTodoRequest) returns(google.protobuf.Empty) {};
-    rpc DeleteTodo(DeleteTodoRequest) returns(google.protobuf.Empty) {};
-    rpc UpdateAsDone(UpdateAsDoneRequest) returns(google.protobuf.Empty) {};
-    rpc ListTodos(ListTodosRequest) returns(ListTodosResponse) {}
+    rpc CreateTodo(CreateTodoRequest) returns(google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: " /api/todo-list/tasks"
+            body: "*"
+        };
+    };
+    rpc UpdateTodo(UpdateTodoRequest) returns(google.protobuf.Empty) {
+        option (google.api.http) = {
+            put: "/api/todo-list/tasks/{id}"
+            body: "*"
+        };
+    };
+    rpc DeleteTodo(DeleteTodoRequest) returns(google.protobuf.Empty) {
+        option (google.api.http) = {
+            delete: "/api/todo-list/tasks/{id}" 
+        };
+    };
+    rpc UpdateAsDone(UpdateAsDoneRequest) returns(google.protobuf.Empty) {
+        option (google.api.http) = {
+            put: "/api/todo-list/tasks/{id}/done "
+            body: "title"
+        };
+    };
+    rpc ListTodos(ListTodosRequest) returns(ListTodosResponse) {
+        option (google.api.http) = {
+            get: "/api/todo-list/tasks"
+        };
+    }
 }
 
 message CreateTodoRequest {
@@ -36,8 +60,9 @@ message UpdateAsDoneRequest {
     string id = 1;
 }
 
+// updated
 message ListTodosRequest {
-    string filter = 1;
+    string status = 1;
 }
 
 message ListTodosResponse {
