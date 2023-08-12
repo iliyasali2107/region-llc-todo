@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"region-llc-todo-service/pkg/db"
@@ -35,7 +36,9 @@ func NewTodoService(s db.Storage) TodoService {
 }
 
 func (ts *todoService) CreateTodo(ctx context.Context, req *pb.CreateTodoRequest) (*emptypb.Empty, error) {
-	convertedTime, err := time.Parse("2006-01-02 ", req.ActiveAt)
+	convertedTime, err := time.Parse("2006-01-02", req.ActiveAt)
+	fmt.Println(err)
+	fmt.Println(convertedTime)
 	if err != nil || convertedTime.IsZero() {
 		return &emptypb.Empty{}, status.Errorf(codes.InvalidArgument, "invalid active time")
 	}
@@ -58,7 +61,7 @@ func (ts *todoService) CreateTodo(ctx context.Context, req *pb.CreateTodoRequest
 }
 
 func (ts *todoService) UpdateTodo(ctx context.Context, req *pb.UpdateTodoRequest) (*emptypb.Empty, error) {
-	convertedTime, err := time.Parse("2006-01-02 ", req.ActiveAt)
+	convertedTime, err := time.Parse("2006-01-02", req.ActiveAt)
 	if err != nil || convertedTime.IsZero() {
 		return &emptypb.Empty{}, status.Errorf(codes.InvalidArgument, "invalid active time")
 	}

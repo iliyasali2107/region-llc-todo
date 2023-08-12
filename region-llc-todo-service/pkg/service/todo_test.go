@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -22,6 +23,8 @@ import (
 func TestCreateTodo(t *testing.T) {
 	date := utils.RandomDate()
 	dateStr := date.Format(utils.DateFormat)
+	fmt.Println(date)
+	fmt.Println(dateStr)
 
 	okReq := &pb.CreateTodoRequest{
 		Title:    utils.RandomString(8),
@@ -100,24 +103,63 @@ func TestCreateTodo(t *testing.T) {
 }
 
 func TestUpdateTodo(t *testing.T) {
-	// protoTime := timestamppb.New(utils.RandomDate())
+	todo := insertRandomTodo(t, db.StatusActive)
+	okReq := &pb.UpdateTodoRequest{
+		Id:       todo.Id,
+		Title:    todo.Title,
+		ActiveAt: todo.ActiveAt.Format(utils.DateFormat),
+	}
 
-	// okReq := &pb.UpdateTodoRequest{
-	// 	Id:       "qwerqwerqwerqwerqwer",
-	// 	Title:    utils.RandomString(8),
-	// 	ActiveAt: protoTime,
-	// }
+	testCases := []struct {
+		name          string
+		req           *pb.UpdateTodoRequest
+		buildStubs    func(storage *mocks.MockStorage)
+		checkResponse func(t *testing.T, err error)
+	}{
+		{
+			name: "OK",
+			req:  okReq,
+			buildStubs: func(storage *mocks.MockStorage) {
+				storage.EXPECT().UpdateTodoById(gomock.Any(), gomock.Any()).Times(1).Return(int64(1), nil)
+			},
+			checkResponse: func(t *testing.T, err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
 
-	// okTodo := models.Todo{
-	// 	Title:    okReq.Title,
-	// 	ActiveAt: okReq.ActiveAt.AsTime(),
-	// 	Status:   db.StatusActive,
-	// }
+	for i := range testCases {
+		tc := testCases[i]
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
-	// testCases := []struct {
-	// 	name          string
-	// 	req           *pb.UpdateTodoRequest
-	// 	buildStubs    func(storage *mocks.MockStorage)
-	// 	checkResponse func(t *testing.T, err error)
-	// }{{}}
+			storage := mocks.NewMockStorage(ctrl)
+
+			tc.buildStubs(storage)
+
+			serv := service.NewTodoService(storage)
+
+			_, err := serv.UpdateTodo(context.Background(), tc.req)
+			tc.checkResponse(t, err)
+		})
+	}
+}
+
+func insertRandomTodo(t *testing.T, status string) models.Todo {
+	date, err := time.Parse(utils.DateFormat, utils.RandomDateStr())
+	require.NoError(t, err)
+	todo := models.Todo{
+		Title:    utils.RandomString(8),
+		ActiveAt: date,
+		Status:   status,
+	}
+
+	id, err := TestStorage.InsertTodo(context.Background(), todo)
+	require.NoError(t, err)
+	require.NotEmpty(t, id)
+
+	todo.Id = id
+
+	return todo
 }

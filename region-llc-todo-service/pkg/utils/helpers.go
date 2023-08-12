@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"math/rand"
+	"strconv"
 	"time"
 
 	"region-llc-todo-service/pkg/models"
@@ -37,11 +38,39 @@ func RandomDate() time.Time {
 	rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	year := rand.Intn(50) + 1970
-	month := time.Month(rand.Intn(12) + 1)
-	day := rand.Intn(28) + 1
-	dateStr := fmt.Sprintf("%d-%d-%d", year, month, day)
+	month := strconv.Itoa(rand.Intn(12) + 1)
+	day := strconv.Itoa(rand.Intn(28) + 1)
 
+	if len(day) == 1 {
+		day = "0" + day
+	}
+
+	if len(month) == 1 {
+		month = "0" + month
+	}
+
+	dateStr := fmt.Sprintf("%d-%s-%s", year, month, day)
 	date, _ := time.Parse(DateFormat, dateStr)
 
 	return date
+}
+
+func RandomDateStr() string {
+	rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	year := rand.Intn(50) + 1970
+	month := strconv.Itoa(rand.Intn(12) + 1)
+	day := strconv.Itoa(rand.Intn(28) + 1)
+
+	if len(day) == 1 {
+		day = "0" + day
+	}
+
+	if len(month) == 1 {
+		month = "0" + month
+	}
+
+	dateStr := fmt.Sprintf("%d-%s-%s", year, month, day)
+
+	return dateStr
 }
