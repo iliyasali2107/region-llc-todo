@@ -2,6 +2,7 @@ package db_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"region-llc-todo-service/pkg/db"
@@ -40,7 +41,7 @@ func TestUpdateTodoById(t *testing.T) {
 
 	okArg := models.Todo{
 		Id:       todo.Id,
-		Title:    "new Title",
+		Title:    utils.RandomString(8),
 		ActiveAt: todo.ActiveAt,
 		Status:   todo.Status,
 	}
@@ -214,10 +215,14 @@ func TestUpdateAsDone(t *testing.T) {
 }
 
 func TestGetTodosByFilterDone(t *testing.T) {
-	checker := utils.RandomString(8)
-	n := 10
+	n := 8
+	checker := utils.RandomString(n)
 	for i := 0; i < n; i++ {
-		TestStorage.InsertTodo(context.Background(), randomTodo(checker, db.StatusDone))
+		_, err := TestStorage.InsertTodo(context.Background(), randomTodo(checker, db.StatusDone))
+		if err != nil {
+			fmt.Print(i, "--")
+			fmt.Println(err)
+		}
 	}
 
 	todos, err := TestStorage.GetTodosByFilterDone(context.Background())
@@ -225,7 +230,7 @@ func TestGetTodosByFilterDone(t *testing.T) {
 
 	acc := 0
 	for _, todo := range todos {
-		if todo.Title == checker {
+		if todo.Title[:n] == checker {
 			acc++
 		}
 	}
@@ -234,18 +239,19 @@ func TestGetTodosByFilterDone(t *testing.T) {
 }
 
 func TestGetTodosByFilterActive(t *testing.T) {
-	checker := utils.RandomString(8)
-	n := 10
+	n := 8
+	checker := utils.RandomString(n)
 	for i := 0; i < n; i++ {
 		TestStorage.InsertTodo(context.Background(), randomTodo(checker, db.StatusActive))
 	}
 
 	todos, err := TestStorage.GetTodosByFilterActive(context.Background())
+
 	require.NoError(t, err)
 
 	acc := 0
 	for _, todo := range todos {
-		if todo.Title == checker {
+		if todo.Title[:n] == checker {
 			acc++
 		}
 	}
@@ -271,7 +277,7 @@ func insertRandomTodo(t *testing.T, status string) models.Todo {
 
 func randomTodo(checker string, status string) models.Todo {
 	return models.Todo{
-		Title:    checker,
+		Title:    checker + utils.RandomString(10),
 		ActiveAt: utils.RandomDate(),
 		Status:   status,
 	}

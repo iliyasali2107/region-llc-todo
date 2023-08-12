@@ -4,7 +4,6 @@ package url;
 
 option go_package = "./pkg/pb";
 
-import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
 
@@ -18,14 +17,14 @@ service TodoService {
 
 message CreateTodoRequest {
     string title = 1;
-    google.protobuf.Timestamp active_at = 2;
+    string active_at = 2;
 }
 
 
 message UpdateTodoRequest {
     string id = 1;
     string title = 2;
-    google.protobuf.Timestamp active_at = 3;
+    string active_at = 3;
 }
 
 message DeleteTodoRequest {
@@ -37,7 +36,7 @@ message UpdateAsDoneRequest {
 }
 
 message ListTodosRequest {
-    string filter = 1;
+    string status = 1;
 }
 
 message ListTodosResponse {
@@ -47,7 +46,7 @@ message ListTodosResponse {
 message Todo {
     string id = 1;
     string title = 2;
-    google.protobuf.Timestamp active_at = 3;
+    string active_at = 3;
     string status = 4;
 }
 

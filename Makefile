@@ -2,10 +2,10 @@ postgres:
 	docker run -d --name my-postgres -e POSTGRES_USER=user -e POSTGRES_PASSWORD=secret -e POSTGRES_DB=url_redirector -p 5432:5432 postgres:latest
 
 server:
-	go run ./cmd/server/main.go
+	go run ./region-llc-todo-service/cmd/main.go
 
 client:
-	go run ./cmd/client/main.go
+	go run ./region-llc-todo-api-gateway/cmd/main.go
 
 gen:
 	protoc -I=./pkg/pb --go_out=./ --go-grpc_out=./ ./pkg/pb/*.proto
@@ -16,12 +16,13 @@ mock_storage:
 test:
 	go test -v -cover ./...
 
-mongo:
-	docker run --name my-mongodb -d -p 27017:27017 mongo:latest
-
 
 up:
 	docker-compose up
 
 build: 
 	docker-compose build
+
+mongo:
+	docker run --name my-mongodb -d -p 27017:27017 mongo:latest
+

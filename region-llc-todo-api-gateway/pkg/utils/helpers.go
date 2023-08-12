@@ -10,11 +10,11 @@ import (
 func FromTodosToProtos(todos []models.Todo) []*pb.Todo {
 	protoTodos := []*pb.Todo{}
 	for _, todo := range todos {
-		timestampProto := timestamppb.New(todo.ActiveAt)
+		// timestampProto := timestamppb.New(todo.ActiveAt)
 		protoTodo := &pb.Todo{
 			Id:       todo.Id,
 			Title:    todo.Title,
-			ActiveAt: timestampProto,
+			ActiveAt: todo.ActiveAt.Format("2006-01-02"),
 			Status:   todo.Status,
 		}
 

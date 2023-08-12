@@ -9,20 +9,8 @@ type Config struct {
 	TodoServicePort string `mapstructure:"TODO_SERVICE_PORT"`
 }
 
-func LoadConfig() (config Config, err error) {
-	viper.SetDefault("TODO_SERVICE_PORT", "todo_service:50051")
-	viper.SetDefault("PORT", ":4000")
-
-	viper.AutomaticEnv()
-	if err = viper.Unmarshal(&config); err != nil {
-		return
-	}
-
-	return
-}
-
 // func LoadConfig() (config Config, err error) {
-// 	viper.SetDefault("TODO_SERVICE_PORT", ":50051")
+// 	viper.SetDefault("TODO_SERVICE_PORT", "todo_service:50051")
 // 	viper.SetDefault("PORT", ":4000")
 
 // 	viper.AutomaticEnv()
@@ -32,3 +20,16 @@ func LoadConfig() (config Config, err error) {
 
 // 	return
 // }
+
+// LOCAL
+func LoadConfig() (config Config, err error) {
+	viper.SetDefault("TODO_SERVICE_PORT", ":50051")
+	viper.SetDefault("PORT", ":4000")
+
+	viper.AutomaticEnv()
+	if err = viper.Unmarshal(&config); err != nil {
+		return
+	}
+
+	return
+}

@@ -1,13 +1,17 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"net/http"
 
 	"region-llc-todo-api-gateway/pkg/config"
-	todo_svc "region-llc-todo-api-gateway/pkg/todo-service/api"
+	"region-llc-todo-api-gateway/pkg/todo-service/pb"
 
-	"github.com/gin-gonic/gin"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 // import (
@@ -51,17 +55,48 @@ import (
 // 	}
 // }
 
-func main() {
+// gin
+// func main() {
+// 	cfg, err := config.LoadConfig()
+// 	if err != nil {
+// 		log.Fatalln("failed to configdock", err)
+// 	}
+
+// 	r := gin.Default()
+
+// 	todo_svc.RegisterRoutes(r, &cfg)
+
+// 	fmt.Println("api-gateway is running on: ", cfg.Port)
+
+// 	r.Run(cfg.Port)
+// }
+
+func run() error {
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalln("failed to configdock", err)
+		log.Fatal(err)
 	}
 
-	r := gin.Default()
+	mux := runtime.NewServeMux()
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+	fmt.Println(cfg.TodoServicePort)
+	err = pb.RegisterTodoServiceHandlerFromEndpoint(ctx, mux, cfg.TodoServicePort, opts)
+	if err != nil {
+		return err
+	}
 
-	todo_svc.RegisterRoutes(r, &cfg)
+	fmt.Printf("Client is on: %s", cfg.Port)
 
-	fmt.Println("api-gateway is running on: ", cfg.Port)
+	return http.ListenAndServe(cfg.Port, mux)
+}
 
-	r.Run(cfg.Port)
+func main() {
+	err := run()
+	if err != nil {
+		log.Fatal(err)
+	}
 }

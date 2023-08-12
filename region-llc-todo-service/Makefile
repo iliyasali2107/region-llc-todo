@@ -6,3 +6,6 @@ mongo:
 
 mock_storage:
 	mockgen -destination=pkg/mocks/mock_storage.go --build_flags=--mod=mod -package=mocks region-llc-todo-service/pkg/db Storage
+
+server: 
+	go run ./cmd/main.go

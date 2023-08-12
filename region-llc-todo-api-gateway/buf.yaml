@@ -1,0 +1,11 @@
+version: v1
+name: buf.build/iliyasali2107/region-llc-todo-api-gateway
+deps:
+  - buf.build/googleapis/googleapis
+
+breaking:
+  use:
+    - DEFAULT
+lint:
+  use:
+    - DEFAULT

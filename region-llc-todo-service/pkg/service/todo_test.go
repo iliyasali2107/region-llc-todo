@@ -17,25 +17,25 @@ import (
 	"github.com/golang/mock/gomock"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestCreateTodo(t *testing.T) {
-	protoTime := timestamppb.New(utils.RandomDate())
+	date := utils.RandomDate()
+	dateStr := date.Format(utils.DateFormat)
 
 	okReq := &pb.CreateTodoRequest{
 		Title:    utils.RandomString(8),
-		ActiveAt: protoTime,
+		ActiveAt: dateStr,
 	}
 
 	invalidReq := &pb.CreateTodoRequest{
 		Title:    utils.RandomString(8),
-		ActiveAt: timestamppb.New(time.Time{}),
+		ActiveAt: time.Time{}.Format(utils.DateFormat),
 	}
 
 	okTodo := models.Todo{
 		Title:    okReq.Title,
-		ActiveAt: okReq.ActiveAt.AsTime(),
+		ActiveAt: date,
 		Status:   db.StatusActive,
 	}
 
@@ -94,7 +94,6 @@ func TestCreateTodo(t *testing.T) {
 			serv := service.NewTodoService(storage)
 
 			_, err := serv.CreateTodo(context.Background(), tc.req)
-
 			tc.checkResponse(t, err)
 		})
 	}

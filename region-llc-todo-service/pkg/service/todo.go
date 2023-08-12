@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"region-llc-todo-service/pkg/db"
 	"region-llc-todo-service/pkg/models"
@@ -34,8 +35,8 @@ func NewTodoService(s db.Storage) TodoService {
 }
 
 func (ts *todoService) CreateTodo(ctx context.Context, req *pb.CreateTodoRequest) (*emptypb.Empty, error) {
-	convertedTime := req.ActiveAt.AsTime()
-	if convertedTime.IsZero() {
+	convertedTime, err := time.Parse("2006-01-02 ", req.ActiveAt)
+	if err != nil || convertedTime.IsZero() {
 		return &emptypb.Empty{}, status.Errorf(codes.InvalidArgument, "invalid active time")
 	}
 
@@ -45,7 +46,7 @@ func (ts *todoService) CreateTodo(ctx context.Context, req *pb.CreateTodoRequest
 		Status:   db.StatusActive,
 	}
 
-	_, err := ts.Storage.InsertTodo(ctx, todo)
+	_, err = ts.Storage.InsertTodo(ctx, todo)
 	if err != nil {
 		if err == db.ErrDuplicate {
 			return &emptypb.Empty{}, status.Errorf(codes.AlreadyExists, "already have this todo")
@@ -57,8 +58,8 @@ func (ts *todoService) CreateTodo(ctx context.Context, req *pb.CreateTodoRequest
 }
 
 func (ts *todoService) UpdateTodo(ctx context.Context, req *pb.UpdateTodoRequest) (*emptypb.Empty, error) {
-	convertedTime := req.ActiveAt.AsTime()
-	if convertedTime.IsZero() {
+	convertedTime, err := time.Parse("2006-01-02 ", req.ActiveAt)
+	if err != nil || convertedTime.IsZero() {
 		return &emptypb.Empty{}, status.Errorf(codes.InvalidArgument, "invalid active time")
 	}
 
@@ -68,7 +69,7 @@ func (ts *todoService) UpdateTodo(ctx context.Context, req *pb.UpdateTodoRequest
 		ActiveAt: convertedTime,
 	}
 
-	_, err := ts.Storage.UpdateTodoById(ctx, todo)
+	_, err = ts.Storage.UpdateTodoById(ctx, todo)
 	if err != nil {
 		if err == db.ErrNotFound {
 			return &emptypb.Empty{}, status.Errorf(codes.NotFound, "todo is not found")
@@ -119,15 +120,15 @@ func (ts *todoService) UpdateAsDone(ctx context.Context, req *pb.UpdateAsDoneReq
 }
 
 func (ts *todoService) ListTodos(ctx context.Context, req *pb.ListTodosRequest) (*pb.ListTodosResponse, error) {
-	filterValue := req.Filter
+	filterStatus := req.Status
 
 	var err error
 	var todos []models.Todo
 
-	if filterValue == db.StatusActive {
-		todos, err = ts.Storage.GetTodosByFilterActive(ctx)
-	} else {
+	if filterStatus == db.StatusDone {
 		todos, err = ts.Storage.GetTodosByFilterDone(ctx)
+	} else {
+		todos, err = ts.Storage.GetTodosByFilterActive(ctx)
 	}
 
 	if err != nil {

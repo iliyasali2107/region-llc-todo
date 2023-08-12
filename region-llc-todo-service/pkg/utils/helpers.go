@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -10,14 +11,15 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+const DateFormat = "2006-01-02"
+
 func FromTodosToProtos(todos []models.Todo) []*pb.Todo {
 	protoTodos := []*pb.Todo{}
 	for _, todo := range todos {
-		timestampProto := timestamppb.New(todo.ActiveAt)
 		protoTodo := &pb.Todo{
 			Id:       todo.Id,
 			Title:    todo.Title,
-			ActiveAt: timestampProto,
+			ActiveAt: todo.ActiveAt.Format("2006-01-02"),
 			Status:   todo.Status,
 		}
 
@@ -37,12 +39,9 @@ func RandomDate() time.Time {
 	year := rand.Intn(50) + 1970
 	month := time.Month(rand.Intn(12) + 1)
 	day := rand.Intn(28) + 1
-	hour := rand.Intn(24)
-	minute := rand.Intn(60)
-	second := rand.Intn(60)
-	nanosecond := rand.Intn(1000000000)
+	dateStr := fmt.Sprintf("%d-%d-%d", year, month, day)
 
-	randomTime := time.Date(year, month, day, hour, minute, second, nanosecond, time.UTC)
+	date, _ := time.Parse(DateFormat, dateStr)
 
-	return randomTime
+	return date
 }

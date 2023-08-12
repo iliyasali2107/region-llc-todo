@@ -4,15 +4,15 @@ package url;
 
 option go_package = "./pkg/pb";
 
-import "google/protobuf/timestamp.proto";
+// import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
-import "google/api/annotations.proto ";
+import "google/api/annotations.proto";
 
 
 service TodoService {
     rpc CreateTodo(CreateTodoRequest) returns(google.protobuf.Empty) {
         option (google.api.http) = {
-            post: " /api/todo-list/tasks"
+            post: "/api/todo-list/tasks"
             body: "*"
         };
     };
@@ -29,8 +29,8 @@ service TodoService {
     };
     rpc UpdateAsDone(UpdateAsDoneRequest) returns(google.protobuf.Empty) {
         option (google.api.http) = {
-            put: "/api/todo-list/tasks/{id}/done "
-            body: "title"
+            put: "/api/todo-list/tasks/{id}/done"
+            body: "id"
         };
     };
     rpc ListTodos(ListTodosRequest) returns(ListTodosResponse) {
@@ -42,14 +42,14 @@ service TodoService {
 
 message CreateTodoRequest {
     string title = 1;
-    google.protobuf.Timestamp active_at = 2;
+    string active_at = 2;
 }
 
 
 message UpdateTodoRequest {
     string id = 1;
     string title = 2;
-    google.protobuf.Timestamp active_at = 3;
+    string active_at = 3;
 }
 
 message DeleteTodoRequest {
@@ -72,7 +72,7 @@ message ListTodosResponse {
 message Todo {
     string id = 1;
     string title = 2;
-    google.protobuf.Timestamp active_at = 3;
+    string active_at = 3;
     string status = 4;
 }
 
