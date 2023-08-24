@@ -8,12 +8,12 @@ To deploy this project run
   git clone https://github.com/iliyasali2107/region-llc-todo
 ```
 ```bash
-  region-llc-todo
+  cd region-llc-todo
 ```
 
 
 ```bash
-  make build & make up
+  make up
 ```
 
 
