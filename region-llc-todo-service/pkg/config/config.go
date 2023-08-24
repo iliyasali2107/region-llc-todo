@@ -11,24 +11,9 @@ type Config struct {
 	TodoCollectionName string `mapstructure:"TODO_COLLECTION"`
 }
 
-// func LoadConfig() (config Config, err error) {
-// 	viper.SetDefault("PORT", "todo_service:50051")
-// 	viper.SetDefault("DB_URL", "mongodb://mongo:27017/todo_list")
-// 	viper.SetDefault("DB_NAME", "todo_list")
-// 	viper.SetDefault("TODO_COLLECTION", "todo")
-
-// 	viper.AutomaticEnv()
-// 	if err = viper.Unmarshal(&config); err != nil {
-// 		return
-// 	}
-
-// 	return
-// }
-
-// for local
 func LoadConfig() (config Config, err error) {
-	viper.SetDefault("PORT", ":50051")
-	viper.SetDefault("DB_URL", "mongodb://localhost:27017/todo_list")
+	viper.SetDefault("PORT", "todo_service:50051")
+	viper.SetDefault("DB_URL", "mongodb://mongo:27017/todo_list")
 	viper.SetDefault("DB_NAME", "todo_list")
 	viper.SetDefault("TODO_COLLECTION", "todo")
 
@@ -39,3 +24,18 @@ func LoadConfig() (config Config, err error) {
 
 	return
 }
+
+// for local
+// func LoadConfig() (config Config, err error) {
+// 	viper.SetDefault("PORT", ":50051")
+// 	viper.SetDefault("DB_URL", "mongodb://localhost:27017/todo_list")
+// 	viper.SetDefault("DB_NAME", "todo_list")
+// 	viper.SetDefault("TODO_COLLECTION", "todo")
+
+// 	viper.AutomaticEnv()
+// 	if err = viper.Unmarshal(&config); err != nil {
+// 		return
+// 	}
+
+// 	return
+// }

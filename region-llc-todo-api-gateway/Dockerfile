@@ -13,6 +13,7 @@ WORKDIR /app
 
 
 COPY --from=build /app/main /app/main
+COPY --from=build /app/pkg/docs /app/pkg/docs
 
 
 # Copy the built Go binary from the build stage to the runtime stage

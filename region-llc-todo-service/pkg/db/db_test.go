@@ -218,7 +218,7 @@ func TestGetTodosByFilterDone(t *testing.T) {
 	n := 8
 	checker := utils.RandomString(n)
 	for i := 0; i < n; i++ {
-		_, err := TestStorage.InsertTodo(context.Background(), randomTodo(checker, db.StatusDone))
+		_, err := TestStorage.InsertTodo(context.Background(), utils.RandomTodo(checker, db.StatusDone))
 		if err != nil {
 			fmt.Print(i, "--")
 			fmt.Println(err)
@@ -242,7 +242,7 @@ func TestGetTodosByFilterActive(t *testing.T) {
 	n := 8
 	checker := utils.RandomString(n)
 	for i := 0; i < n; i++ {
-		TestStorage.InsertTodo(context.Background(), randomTodo(checker, db.StatusActive))
+		TestStorage.InsertTodo(context.Background(), utils.RandomTodo(checker, db.StatusActive))
 	}
 
 	todos, err := TestStorage.GetTodosByFilterActive(context.Background())
@@ -273,12 +273,4 @@ func insertRandomTodo(t *testing.T, status string) models.Todo {
 	todo.Id = id
 
 	return todo
-}
-
-func randomTodo(checker string, status string) models.Todo {
-	return models.Todo{
-		Title:    checker + utils.RandomString(10),
-		ActiveAt: utils.RandomDate(),
-		Status:   status,
-	}
 }

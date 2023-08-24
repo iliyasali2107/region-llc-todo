@@ -22,6 +22,7 @@ type Storage interface {
 	GetTodosByFilterDone(ctx context.Context) ([]models.Todo, error)
 	GetTodosByFilterActive(ctx context.Context) ([]models.Todo, error)
 	GetOneTodo(ctx context.Context, id string) (todo models.Todo, err error)
+	Close(ctx context.Context) error
 }
 
 type storage struct {
@@ -53,6 +54,10 @@ func Init(cfg config.Config) Storage {
 	}
 }
 
+func (s *storage) Close(ctx context.Context) error {
+	return s.DB.Disconnect(context.Background())
+}
+
 func InitCollection(db *mongo.Client, cfg config.Config) *mongo.Collection {
 	ctx := context.Background()
 	todoCollection := db.Database(cfg.DbName).Collection(cfg.TodoCollectionName)
@@ -72,7 +77,6 @@ func InitCollection(db *mongo.Client, cfg config.Config) *mongo.Collection {
 	return db.Database(cfg.DbName).Collection(cfg.TodoCollectionName)
 }
 
-// TODO: duplicate field error
 func (s *storage) InsertTodo(ctx context.Context, todo models.Todo) (string, error) {
 	res, err := s.TodoCollection.InsertOne(ctx, todo)
 	if err != nil {

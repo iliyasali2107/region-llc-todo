@@ -2,6 +2,7 @@ version: v1
 name: buf.build/iliyasali2107/region-llc-todo-api-gateway
 deps:
   - buf.build/googleapis/googleapis
+  - buf.build/grpc-ecosystem/grpc-gateway
 
 breaking:
   use:

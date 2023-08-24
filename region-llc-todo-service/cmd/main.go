@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
@@ -14,13 +15,22 @@ import (
 )
 
 func main() {
+	// загружаем переменные среды
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalln("Failed to config", err)
 	}
 
+	// инициализируем сторадж
 	storage := db.Init(cfg)
 
+	// и закрываем при выходе из программы
+	defer func() {
+		if err := storage.Close(context.Background()); err != nil {
+			log.Fatal(err)
+		}
+	}()
+	
 	lis, err := net.Listen("tcp", cfg.Port)
 	if err != nil {
 		log.Fatalln("Failed to listening")
@@ -30,6 +40,7 @@ func main() {
 
 	srv := service.NewTodoService(storage)
 
+	
 	grpcServer := grpc.NewServer()
 
 	pb.RegisterTodoServiceServer(grpcServer, srv)

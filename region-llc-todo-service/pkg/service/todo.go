@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"region-llc-todo-service/pkg/db"
@@ -37,10 +36,12 @@ func NewTodoService(s db.Storage) TodoService {
 
 func (ts *todoService) CreateTodo(ctx context.Context, req *pb.CreateTodoRequest) (*emptypb.Empty, error) {
 	convertedTime, err := time.Parse("2006-01-02", req.ActiveAt)
-	fmt.Println(err)
-	fmt.Println(convertedTime)
 	if err != nil || convertedTime.IsZero() {
 		return &emptypb.Empty{}, status.Errorf(codes.InvalidArgument, "invalid active time")
+	}
+
+	if req.Title == "" || len(req.Title) > 200 {
+		return &emptypb.Empty{}, status.Errorf(codes.InvalidArgument, "invalid title")
 	}
 
 	todo := models.Todo{
@@ -54,7 +55,7 @@ func (ts *todoService) CreateTodo(ctx context.Context, req *pb.CreateTodoRequest
 		if err == db.ErrDuplicate {
 			return &emptypb.Empty{}, status.Errorf(codes.AlreadyExists, "already have this todo")
 		}
-		return &emptypb.Empty{}, err
+		return &emptypb.Empty{}, status.Errorf(codes.Internal, "something unexpected occured")
 	}
 
 	return &emptypb.Empty{}, nil
@@ -64,6 +65,10 @@ func (ts *todoService) UpdateTodo(ctx context.Context, req *pb.UpdateTodoRequest
 	convertedTime, err := time.Parse("2006-01-02", req.ActiveAt)
 	if err != nil || convertedTime.IsZero() {
 		return &emptypb.Empty{}, status.Errorf(codes.InvalidArgument, "invalid active time")
+	}
+
+	if req.Title == "" || len(req.Title) > 200 {
+		return &emptypb.Empty{}, status.Errorf(codes.InvalidArgument, "invalid title")
 	}
 
 	todo := models.Todo{
@@ -82,7 +87,7 @@ func (ts *todoService) UpdateTodo(ctx context.Context, req *pb.UpdateTodoRequest
 			return &emptypb.Empty{}, status.Errorf(codes.AlreadyExists, "already updated")
 		}
 
-		return &emptypb.Empty{}, err
+		return &emptypb.Empty{}, status.Errorf(codes.Internal, "something unexpected occured")
 	}
 
 	return &emptypb.Empty{}, nil
@@ -97,7 +102,7 @@ func (ts *todoService) DeleteTodo(ctx context.Context, req *pb.DeleteTodoRequest
 			return &emptypb.Empty{}, status.Errorf(codes.NotFound, "todo is not found")
 		}
 
-		return &emptypb.Empty{}, err
+		return &emptypb.Empty{}, status.Errorf(codes.Internal, "something unexpected occured")
 	}
 
 	return &emptypb.Empty{}, nil
@@ -116,7 +121,7 @@ func (ts *todoService) UpdateAsDone(ctx context.Context, req *pb.UpdateAsDoneReq
 			return &emptypb.Empty{}, status.Errorf(codes.AlreadyExists, "already updated")
 		}
 
-		return &emptypb.Empty{}, err
+		return &emptypb.Empty{}, status.Errorf(codes.Internal, "something unexpected occured")
 	}
 
 	return &emptypb.Empty{}, nil
@@ -136,10 +141,10 @@ func (ts *todoService) ListTodos(ctx context.Context, req *pb.ListTodosRequest) 
 
 	if err != nil {
 		if err == db.ErrNotFound {
-			return nil, status.Errorf(codes.NotFound, "todo is not found")
+			return &pb.ListTodosResponse{Todos: []*pb.Todo{}}, nil
 		}
 
-		return nil, err
+		return nil, status.Errorf(codes.Internal, "something unexpected occured")
 	}
 
 	return &pb.ListTodosResponse{Todos: utils.FromTodosToProtos(todos)}, nil

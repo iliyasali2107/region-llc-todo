@@ -74,3 +74,11 @@ func RandomDateStr() string {
 
 	return dateStr
 }
+
+func RandomTodo(checker string, status string) models.Todo {
+	return models.Todo{
+		Title:    checker + RandomString(10),
+		ActiveAt: RandomDate(),
+		Status:   status,
+	}
+}
